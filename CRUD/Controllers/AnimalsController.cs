@@ -1,8 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
+﻿using AnimalsBusinesLayer;
+using AnimalsBusinesLayer.DTOs;
+using Microsoft.AspNetCore.Mvc;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace MyCrud.Controllers
@@ -11,83 +10,61 @@ namespace MyCrud.Controllers
     [Route("[controller]")]
     public class AnimalsController : ControllerBase
     {
-        private static List<Animals> _animals = new List<Animals>()
+        private readonly IAnimalsService _animalsService;
+        public AnimalsController(IAnimalsService animalsService)
         {
-          new Animals() { Id = 1, Age = 5, Name = "Bob", Breed = "Buldog" },
-          new Animals() { Id = 2, Age = 3, Name = "Cesar", Breed = "Taksa" },
-          new Animals() { Id = 3, Age = 7, Name = "Neptun", Breed = "Rassel" },
-          new Animals() { Id = 4, Age = 1, Name = "Charli", Breed = "RedRiver" }
-         
-        };
+            _animalsService =  animalsService;
 
-        private readonly ILogger<AnimalsController> _logger;
-
-        public AnimalsController(ILogger<AnimalsController> logger)
-        {
-     
-            _logger = logger;
         }
-
         [HttpGet]
-        public IActionResult Get()
+        public async Task<IActionResult> GetAllProducts()
         {
-
-            return Ok(_animals);
-              
+            var items = await _animalsService.GetAllAnimals();
+            return Ok(items);
         }
-        [HttpPost]
-        public IActionResult Post(Animals animals)
-        {
-            animals.Id = 5;
-            animals.Name = "Vasya";
-            animals.Age = 10;
-            animals.Breed = "Labrodor";
-            _animals.Add(animals);
-
-
-            return Created("5", animals);
-        }
-        [HttpPut("{id}")]
-        public IActionResult Put(int id, Animals animals)
-        {
-            var value = _animals.Where(x => x.Id == id).FirstOrDefault();
-            if (value != null)
-            {
-                foreach (var item in _animals)
-                {
-                    if (item.Id == id)
-                    {
-                        item.Breed = "Chappy";
-                    }  
-                }
-
-                animals.Breed = "Chappy";
-                return Ok(animals);
-              
-            }
-            return NotFound();
-        }
-
         [HttpGet("{id}")]
-        public IActionResult GetById(int id)
+        public async Task<IActionResult> GetById(Guid id)
         {
-           var value = _animals.Where(x => x.Id == id).FirstOrDefault();
-            if (value != null) 
-                return Ok(value);
-            else return NotFound();
-
-        }
-        [HttpDelete("{id}")]
-        public IActionResult Delete(int id)
-        {
-            var value = _animals.Where(x => x.Id == id).FirstOrDefault();
-            if (value != null)
+            var item = _animalsService.GetAnimalById(id);
+            if (item != null)
             {
-                _animals.Remove(value);
-                return Ok(value);
+                return Ok(item);
             }
             return NotFound();
+        }
 
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteAnimalById(Guid id)
+        {
+            var item = _animalsService.DeleteAnimalById(id);
+            if (item != null)
+            {
+                return Ok(item);
+            }
+            return NotFound();
+        }
+
+        [HttpPost("{id}")]
+        public async Task<IActionResult> CreateAnimal(AnimalDTO animal)
+        {
+            var guid = await _animalsService.CreateAnimal(animal);
+            if (guid != Guid.Empty)
+            {
+                return Ok(guid);
+            }
+            return BadRequest();
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateAnimal(Guid id, AnimalDTO animal)
+        {
+            
+            var updateAnimal = await _animalsService.UpdateAnimal(id,animal);
+            if (updateAnimal != null)
+            {
+                return Ok(updateAnimal);
+            }
+            return BadRequest();
         }
     }
 }
